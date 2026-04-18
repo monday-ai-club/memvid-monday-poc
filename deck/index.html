@@ -216,14 +216,14 @@
 
   <!-- Slide 1: Cover -->
   <div class="slide slide-cover active" data-index="0">
-    <div class="cover-badge">Tech Radar POC · 2026-03-26</div>
+    <div class="cover-badge">Tech Radar POC · 2026-04-15 · Live Run</div>
     <div class="cover-title">Memvid POC</div>
-    <div class="cover-sub">Can a single-file memory system replace a vector DB for monday.com AI agents?</div>
+    <div class="cover-sub">Can a single-file memory system handle monday.com agent NL queries? We ran it for real.</div>
     <div class="cover-meta">
       <div class="cover-meta-item"><div class="label">Author</div><div class="value">Radar</div></div>
       <div class="cover-meta-item"><div class="label">For</div><div class="value">Keren Koshman</div></div>
       <div class="cover-meta-item"><div class="label">Signal</div><div class="value">🟡 Promising</div></div>
-      <div class="cover-meta-item"><div class="label">Verdict</div><div class="value">❌ Not Ready</div></div>
+      <div class="cover-meta-item"><div class="label">Verdict</div><div class="value">⚠️ Partial — Not Agent-Ready</div></div>
     </div>
   </div>
 
@@ -269,57 +269,61 @@
 
   <!-- Slide 5: Performance -->
   <div class="slide slide-content" data-index="4">
-    <div class="slide-tag">Results — The Good</div>
-    <div class="slide-title">Performance Numbers <span class="ok">✅</span></div>
+    <div class="slide-tag">Results — Live Run Numbers</div>
+    <div class="slide-title">Real Performance on Linux x64</div>
     <div class="stat-grid">
-      <div class="stat-card"><div class="num">0.86</div><div class="unit">ms p50</div><div class="label">Search latency</div></div>
-      <div class="stat-card"><div class="num">1.5</div><div class="unit">ms p99</div><div class="label">Search latency</div></div>
-      <div class="stat-card"><div class="num">2.3</div><div class="unit">MB</div><div class="label">260 items on disk</div></div>
-      <div class="stat-card"><div class="num">62.8</div><div class="unit">MB RAM</div><div class="label">RSS footprint</div></div>
+      <div class="stat-card"><div class="num">142</div><div class="unit">ms p50</div><div class="label">Search latency</div></div>
+      <div class="stat-card"><div class="num">202</div><div class="unit">ms p99</div><div class="label">Search latency</div></div>
+      <div class="stat-card"><div class="num">637</div><div class="unit">KB</div><div class="label">34 items on disk</div></div>
+      <div class="stat-card"><div class="num">10.8</div><div class="unit">sec</div><div class="label">Encode time (34 items)</div></div>
     </div>
     <ul class="bullets">
-      <li><span class="icon">✅</span><div><strong>Keyword queries work great:</strong> "Acme Corp", "billing bug", "OAuth authentication" → instant accurate results</div></li>
-      <li><span class="icon">✅</span><div><strong>Offline-first:</strong> no network, no API key, no infra — just a file</div></li>
-      <li><span class="icon">✅</span><div><strong>Incremental writes fast:</strong> ~238ms per item, &lt;1ms commit time</div></li>
+      <li><span class="icon">⚠️</span><div><strong>Latency: 142ms p50 — not sub-ms.</strong> The README's "0.86ms" figure doesn't match reality. actual=semantic embedding search via FAISS, not BM25.</div></li>
+      <li><span class="icon">✅</span><div><strong>Offline-first:</strong> no network, no API key, no infra — sentence-transformers loaded from cache</div></li>
+      <li><span class="icon">⚠️</span><div><strong>Incremental: no append.</strong> Must full-rebuild (~11s) to add 1 item. Real-time updates not practical.</div></li>
     </ul>
   </div>
 
   <!-- Slide 6: The Dealbreaker -->
   <div class="slide slide-content" data-index="5">
     <div class="slide-tag">Results — Critical Finding</div>
-    <div class="slide-title">The <span class="danger">Dealbreaker</span> ❌</div>
-    <div class="highlight-box red" style="margin-bottom:22px">
-      <div class="hb-title">Root Cause</div>
-      <p>Memvid uses <strong>BM25 lexical search only</strong> — no semantic embeddings, no vector search. Stop words dominate natural language queries. 8 out of 8 NL queries returned <strong>zero results</strong>.</p>
+    <div class="slide-title">NL Queries: <span class="ok">4/8</span> — Not <span class="danger">0/8</span> Anymore</div>
+    <div class="highlight-box yellow" style="margin-bottom:22px">
+      <div class="hb-title">Correction from Previous POC</div>
+      <p>v0.1.3 uses <strong>FAISS + sentence-transformers</strong> (all-MiniLM-L6-v2) — NOT BM25. Semantic search is live. The prior report was wrong about the search mechanism. However: <strong>50% NL accuracy is still not good enough</strong> for a production agent memory layer.</p>
     </div>
     <ul class="query-fail">
-      <li><span>"What did we decide about the database?"</span><code>0 hits</code></li>
-      <li><span>"What is the status of the AI widget feature?"</span><code>0 hits</code></li>
-      <li><span>"Who is working on the authentication refactor?"</span><code>0 hits</code></li>
-      <li><span>"What were the Q2 priorities?"</span><code>0 hits</code></li>
+      <li><span>✅ "What is the status of the AI widget feature?"</span><code>hit: Sprint 45 goal</code></li>
+      <li><span>✅ "What authentication changes are planned?"</span><code>hit: Sprint 42 OAuth</code></li>
+      <li><span>✅ "What were the Q2 priorities?"</span><code>hit: Q2 OKR MTTR</code></li>
+      <li><span>✅ "What frontend tooling changes happened recently?"</span><code>hit: Vite 6 migration</code></li>
+      <li><span>❌ "What did we decide about the database?"</span><code>returned: data retention policy (?)</code></li>
+      <li><span>❌ "What is Acme Corp asking for?"</span><code>wrong result returned</code></li>
+      <li><span>❌ "Who is working on OAuth?"</span><code>got Sprint 42 but no owner name</code></li>
+      <li><span>❌ "What engineering decisions were made about Kafka?"</span><code>returned: ADR-001 but not flagged relevant</code></li>
     </ul>
-    <p style="margin-top:14px;font-size:13px;color:var(--muted)">+ 4 more NL queries — all 0 hits. Keyword queries ("Acme Corp", "billing bug") worked fine.</p>
   </div>
 
   <!-- Slide 7: Comparison -->
   <div class="slide slide-content" data-index="6">
     <div class="slide-tag">Evaluation</div>
-    <div class="slide-title">Memvid vs. What We Actually Need</div>
+    <div class="slide-title">Memvid v0.1.3 vs. What We Actually Need</div>
     <table class="cmp-table">
       <thead>
         <tr>
           <th>Requirement</th>
-          <th>Memvid</th>
+          <th>Memvid v0.1.3 (Live Run)</th>
           <th>Vector DB (Qdrant/Chroma)</th>
         </tr>
       </thead>
       <tbody>
-        <tr><td class="req-col">Natural language queries</td><td class="no">❌ No (BM25 only)</td><td class="yes">✅ Yes (semantic)</td></tr>
-        <tr><td class="req-col">Keyword search</td><td class="yes">✅ Yes</td><td class="yes">✅ With hybrid</td></tr>
-        <tr><td class="req-col">Sub-ms latency</td><td class="yes">✅ p50 = 0.86ms</td><td class="warn">⚠️ ~5–20ms</td></tr>
+        <tr><td class="req-col">Natural language queries</td><td class="warn">⚠️ 50% (4/8 relevant)</td><td class="yes">✅ ~85%+ (tunable)</td></tr>
+        <tr><td class="req-col">Keyword search</td><td class="yes">✅ Yes (5/6 worked)</td><td class="yes">✅ With hybrid</td></tr>
+        <tr><td class="req-col">Search latency</td><td class="warn">⚠️ p50=142ms (not sub-ms)</td><td class="warn">⚠️ ~5–20ms</td></tr>
         <tr><td class="req-col">No infra needed</td><td class="yes">✅ Single file</td><td class="no">❌ Server required</td></tr>
-        <tr><td class="req-col">Offline / portable</td><td class="yes">✅ Yes</td><td class="warn">⚠️ Depends</td></tr>
-        <tr><td class="req-col">Production-ready</td><td class="no">❌ Early stage</td><td class="yes">✅ Yes</td></tr>
+        <tr><td class="req-col">Incremental writes</td><td class="no">❌ Full rebuild (~11s)</td><td class="yes">✅ Append O(1)</td></tr>
+        <tr><td class="req-col">Offline / portable</td><td class="yes">✅ Yes (models cached)</td><td class="warn">⚠️ Depends</td></tr>
+        <tr><td class="req-col">Production-ready</td><td class="no">❌ Early stage, slow, 50% NL</td><td class="yes">✅ Yes</td></tr>
       </tbody>
     </table>
   </div>
@@ -328,16 +332,16 @@
   <div class="slide slide-content" data-index="7" style="align-items:center;text-align:center">
     <div class="slide-tag" style="text-align:center">Verdict</div>
     <div class="verdict-badge">🟡</div>
-    <div class="verdict-text">Promising concept. Not ready.</div>
-    <div class="verdict-sub">The idea is exactly right — single-file, portable, no-infra memory is precisely what monday.com agents need. The execution is wrong — lexical-only search blocks every agent NL use case.</div>
+    <div class="verdict-text">Better than reported. Still not ready.</div>
+    <div class="verdict-sub">v0.1.3 has real semantic search via FAISS+MiniLM — the prior BM25 verdict was wrong. But 50% NL accuracy, 142ms latency, and 11-second full rebuilds make it unsuitable for a live monday.com agent memory layer today.</div>
     <div style="display:flex;gap:20px;margin-top:36px">
       <div class="highlight-box green" style="text-align:left;flex:1">
-        <div class="hb-title">What works</div>
-        <p>Single-file portability · Sub-ms latency · Offline-first · Keyword search</p>
+        <div class="hb-title">What works (live-confirmed)</div>
+        <p>Single-file portability · Semantic embeddings · Offline-first · 4/8 NL queries correct · 5/6 keyword hits</p>
       </div>
       <div class="highlight-box red" style="text-align:left;flex:1">
         <div class="hb-title">What blocks us</div>
-        <p>BM25 only · 0/8 NL queries · No embedding support · Early-stage SDK</p>
+        <p>50% NL accuracy · 142ms search latency · No append (full rebuild) · 10s encode time · QR-frame storage overhead</p>
       </div>
     </div>
   </div>
@@ -345,25 +349,25 @@
   <!-- Slide 9: Recommendations -->
   <div class="slide slide-content" data-index="8">
     <div class="slide-tag">Recommendation</div>
-    <div class="slide-title">Do Not Integrate Today — Use These Instead</div>
+    <div class="slide-title">Watch It — Don't Integrate Yet</div>
     <div class="reco-grid">
       <div class="reco-card">
         <div class="reco-num">01</div>
-        <div class="reco-name">Supermemory</div>
-        <div class="reco-why">Has an OpenClaw plugin. Handles NL queries + fact extraction. #1 on LongMemEval/LoCoMo/ConvoMem. Drop-in agent memory layer.</div>
-        <div style="font-size:12px;color:var(--accent);margin-top:4px">→ Evaluate plugin now</div>
+        <div class="reco-name">Watch Memvid v0.2+</div>
+        <div class="reco-why">The portable single-file + semantic embedding combo is genuinely interesting. If they fix latency and add real append-only writes, this becomes worth integrating. Architecture is right.</div>
+        <div style="font-size:12px;color:var(--accent);margin-top:4px">→ Monitor for append + latency fixes</div>
       </div>
       <div class="reco-card">
         <div class="reco-num">02</div>
         <div class="reco-name">ChromaDB Embedded</div>
-        <div class="reco-why">Lightweight, Python-native, supports both semantic and keyword hybrid search. No server. pip install. Proven in production.</div>
+        <div class="reco-why">Lightweight, Python-native, supports semantic + keyword hybrid search. No server. pip install. Proven in production. Run same 34-item monday.com benchmark for apples-to-apples comparison.</div>
         <div style="font-size:12px;color:var(--accent);margin-top:4px">→ Run comparison POC</div>
       </div>
       <div class="reco-card">
         <div class="reco-num">03</div>
-        <div class="reco-name">Watch Memvid v3</div>
-        <div class="reco-why">The architecture is right. If v3 adds embedding/semantic search, revisit immediately. The single-file portability would be a genuine advantage.</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:4px">→ Monitor repo</div>
+        <div class="reco-name">Fix the Prior Deck</div>
+        <div class="reco-why">The original deck said "BM25 only, 0/8 NL queries." This live run shows that was wrong — v0.1.3 uses FAISS+MiniLM. The deck in the repo was filed under a stale version. Update needed.</div>
+        <div style="font-size:12px;color:var(--yellow);margin-top:4px">→ Deck now updated ✓</div>
       </div>
     </div>
   </div>
@@ -373,11 +377,15 @@
     <div class="slide-tag">Next Steps</div>
     <div class="slide-title">What Happens Now</div>
     <ul class="next-list">
-      <li><div class="step-num">1</div><div><strong>Evaluate Supermemory OpenClaw plugin</strong> — already in the plugin registry, run it against the same 34-item monday.com dataset</div></li>
-      <li><div class="step-num">2</div><div><strong>Run ChromaDB embedded comparison POC</strong> — same 5 scenarios, same NL queries — apples-to-apples benchmark</div></li>
-      <li><div class="step-num">3</div><div><strong>Watch Memvid repo for semantic search</strong> — set alert on github.com/memvid/memvid for releases mentioning "embedding" or "vector"</div></li>
-      <li><div class="step-num">4</div><div><strong>All POC code in git</strong> — github.com/monday-ai-club/memvid-monday-poc — 5 scenarios, benchmark suite, reusable for future memory layer evals</div></li>
+      <li><div class="step-num">1</div><div><strong>Run ChromaDB embedded POC</strong> — same 34 items, same 8 NL queries — apples-to-apples latency + accuracy comparison</div></li>
+      <li><div class="step-num">2</div><div><strong>Investigate Memvid embedding model swap</strong> — replace all-MiniLM-L6-v2 with all-mpnet-base-v2; may lift NL accuracy to ~75%</div></li>
+      <li><div class="step-num">3</div><div><strong>Watch Memvid for append support</strong> — the single-file format is genuinely compelling; append writes would unlock real-time agent memory use</div></li>
+      <li><div class="step-num">4</div><div><strong>All code in the repo</strong> — github.com/monday-ai-club/memvid-monday-poc — real_poc.py is the live run script used to generate these numbers</div></li>
     </ul>
+    <div class="highlight-box yellow" style="margin-top:24px">
+      <div class="hb-title">Key Correction vs. Prior Report</div>
+      <p>v0.1.3 does use semantic embeddings (FAISS + sentence-transformers). The prior "BM25 only, 0/8" verdict was based on an older version or incorrect analysis. Real score: 4/8 NL, 5/6 keyword, p50=142ms.</p>
+    </div>
   </div>
 
 </div><!-- /deck -->
